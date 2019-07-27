@@ -1,5 +1,5 @@
 "use strict";
-
+// meu teste
 const Url = require("url-parse");
 const DATABASE_URL = new Url(Env.get("DATABASE_URL"));
 
