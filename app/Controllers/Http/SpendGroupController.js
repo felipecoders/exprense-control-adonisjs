@@ -21,15 +21,34 @@ class SpendGroupController {
   async index({ auth }) {
     const { id } = auth.user;
     const spendGroups = await SpendGroup.query()
-      .where({
-        user_id: id
-      })
+      // .where({
+      //   user_id: id
+      // })
+      .select("spend_groups.*", "user_spend_groups.root")
       .with("user", builder => {
         /** é obrigado a possuir o campo ID */
         builder.select("id", "name", "last_name");
       })
+      .leftJoin("user_spend_groups", function() {
+        this.on({
+          "spend_groups.id": "user_spend_groups.spend_group_id",
+          "spend_groups.user_id": id
+        });
+      })
+      .whereExists(function() {
+        this.select("*")
+          .from("user_spend_groups")
+          .whereRaw("spend_groups.id = user_spend_groups.spend_group_id")
+          .andWhereRaw("spend_groups.user_id = user_spend_groups.user_id");
+      })
       .fetch();
-    return spendGroups;
+
+    return spendGroups.rows.map(group => {
+      if (!group.root) {
+        group.root = undefined;
+      }
+      return group;
+    });
   }
 
   /**
@@ -54,18 +73,41 @@ class SpendGroupController {
    * GET spendgroups/:id
    *
    * @param {object} ctx
+   * @param {Response} ctx.response
    * @param {AuthSession} ctx.auth
    */
-  async show({ params, auth }) {
-    const { id } = auth.user;
-    const spendGroup = await SpendGroup.query()
-      .where({
-        id: params.id,
-        user_id: id
-      })
-      .with("user")
-      .firstOrFail();
-    return spendGroup;
+  async show({ params, response, auth }) {
+    try {
+      const { id } = auth.user;
+      const spendGroup = await SpendGroup.query()
+        .select("spend_groups.*", "user_spend_groups.root")
+        .with("user")
+        .leftJoin("user_spend_groups", function() {
+          this.on({
+            "spend_groups.id": "user_spend_groups.spend_group_id",
+            "spend_groups.user_id": id
+          });
+        })
+        .whereExists(function() {
+          this.select("*")
+            .from("user_spend_groups")
+            .whereRaw("spend_groups.id = user_spend_groups.spend_group_id")
+            .andWhereRaw("spend_groups.user_id = user_spend_groups.user_id");
+        })
+        .andWhereRaw(`spend_groups.id = ${params.id}`)
+        .firstOrFail();
+
+      if (!spendGroup.root) {
+        spendGroup.root = undefined;
+      }
+
+      return spendGroup;
+    } catch (e) {
+      console.log(e);
+      return response.status(404).send({
+        message: "Page not found"
+      });
+    }
   }
 
   /**
@@ -84,7 +126,9 @@ class SpendGroupController {
     const data = request.only(["name"]);
     // valid register by user
     if (spendGroup.user_id !== auth.user.id) {
-      return response.status(401);
+      return response.status(403).send({
+        message: "Permission denied"
+      });
     }
     // apply change name
     spendGroup.merge(data);
@@ -101,8 +145,18 @@ class SpendGroupController {
    * @param {object} ctx
    * @param {Request} ctx.request
    * @param {Response} ctx.response
+   * @param {AuthSession} ctx.auth
    */
-  async destroy({ params, request, response }) {}
+  async destroy({ params, request, response, auth }) {
+    const spendGroup = await SpendGroup.findOrFail(params.id);
+    if (spendGroup.user_id !== auth.user.id) {
+      return response.status(403).send({
+        message: "Permission denied"
+      });
+    }
+
+    await spendGroup.delete();
+  }
 }
 
 module.exports = SpendGroupController;

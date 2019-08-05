@@ -22,20 +22,14 @@ class UserSpendGroupController {
    * @param {View} ctx.view
    */
   async index({ auth }) {
-    // const { id } = auth.user;
-    // const spendGroup = UserSpendGroup.query().with("");
-  }
+    const { id } = auth.user;
+    const userSpendGroup = UserSpendGroup.query()
+      // .where("user_id", id)
+      .with("spends")
+      .fetch();
 
-  /**
-   * Render a form to be used for creating a new userspendgroup.
-   * GET userspendgroups/create
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   * @param {View} ctx.view
-   */
-  async create({ request, response, view }) {}
+    return userSpendGroup;
+  }
 
   /**
    * Create/save a new userspendgroup.
@@ -45,7 +39,15 @@ class UserSpendGroupController {
    * @param {Request} ctx.request
    * @param {Response} ctx.response
    */
-  async store({ request, response }) {}
+  async store({ request, response }) {
+    const data = request.all();
+    const userSpendGroup = await UserSpendGroup.create({
+      ...data,
+      // root false pois o usuario inserido aqui foi convidado
+      root: false
+    });
+    return userSpendGroup;
+  }
 
   /**
    * Display a single userspendgroup.
@@ -57,17 +59,6 @@ class UserSpendGroupController {
    * @param {View} ctx.view
    */
   async show({ params, request, response, view }) {}
-
-  /**
-   * Render a form to update an existing userspendgroup.
-   * GET userspendgroups/:id/edit
-   *
-   * @param {object} ctx
-   * @param {Request} ctx.request
-   * @param {Response} ctx.response
-   * @param {View} ctx.view
-   */
-  async edit({ params, request, response, view }) {}
 
   /**
    * Update userspendgroup details.

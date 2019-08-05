@@ -18,6 +18,12 @@ const Route = use("Route");
 
 Route.post("/users", "UserController.create");
 Route.post("/sessions", "SessionController.create");
-Route.resource("spendGroup", "SpendGroupController")
+Route.resource("spend-group", "SpendGroupController")
+  .apiOnly()
+  .middleware("auth");
+Route.resource("spend", "SpendController")
+  .apiOnly()
+  .middleware("auth");
+Route.resource("user-spend-group", "UserSpendGroupController")
   .apiOnly()
   .middleware("auth");

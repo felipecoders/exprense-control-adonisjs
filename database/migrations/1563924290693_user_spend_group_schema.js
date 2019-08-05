@@ -1,4 +1,5 @@
 "use strict";
+/// <reference path="../../index.d.ts" />
 
 /** @type {import('@adonisjs/lucid/src/Schema')} */
 const Schema = use("Schema");
@@ -23,6 +24,10 @@ class UserSpendGroupSchema extends Schema {
           .inTable("spend_groups")
           .onUpdate("CASCADE")
           .onDelete("CASCADE");
+        table
+          .boolean("root")
+          .defaultTo(false)
+          .notNullable();
         table.timestamps();
       }
     );

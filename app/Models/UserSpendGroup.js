@@ -4,12 +4,20 @@
 const Model = use("Model");
 
 class UserSpendGroup extends Model {
+  static get hidden() {
+    return ["spend_group_id"];
+  }
+
   users() {
     return this.hasOne("All/Models/User");
   }
 
   spendGroups() {
-    this.hasOne("App/Models/SpendGroup");
+    return this.belongsTo("App/Models/SpendGroup");
+  }
+
+  spends() {
+    return this.manyThrough("App/Models/SpendGroup", "spends");
   }
 }
 

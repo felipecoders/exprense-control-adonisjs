@@ -2,10 +2,19 @@
 
 /** @type {typeof import('@adonisjs/lucid/src/Lucid/Model')} */
 const Model = use("Model");
+const Database = use("Database");
 
 class Spend extends Model {
-  spendGroups() {
-    return this.hasOne("App/Models/SpendGroup");
+  static get hidden() {
+    return ["spend_group_id"];
+  }
+
+  group() {
+    return this.belongsTo("App/Models/SpendGroup").select("id", "name");
+  }
+
+  checkGroup() {
+    return this.manyThrough("App/Models/UserSpendGroup", "spendGroups");
   }
 }
 
